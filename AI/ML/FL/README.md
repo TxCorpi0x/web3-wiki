@@ -135,7 +135,7 @@ Non-IID instability and client drift are explicitly analyzed in SCAFFOLD and rel
 | Local epochs $E$ | 1 to 10 | more local progress, more drift risk |
 | Batch size $B$ | 16 to 256 | smaller batch gives noisier but more update steps |
 | Local LR $\eta$ | task dependent | dominant stability knob |
-| Server optimizer/LR | [FedAvg](FedAvg.md)/[FedAvgM](FedAvgM.md)/[FedAdam](FedAdam.md)/[FedYogi](FedYogi.md) | can improve robustness under heterogeneity |
+| Server optimizer/LR | [FedAvg](FedAvg.md)/[FedAvgM](FedAvgM.md)/[FedAdam](FedAdam.md)/[FedYogi](FedYogi.md)/[FedAdagrad](FedAdagrad.md) | can improve robustness under heterogeneity |
 
 Practical pattern: tune $\eta$ jointly with local work ($E$, $B$), then tune client fraction and server optimizer [3][6].
 
@@ -197,6 +197,30 @@ Apply server-side Adam-style adaptive updates to the aggregated client updates (
 ### FedYogi
 
 Apply server-side Yogi adaptive updates to the aggregated client updates (see [FedYogi](FedYogi.md)). FedYogi uses a sign-based second-moment update to prevent uncontrolled growth of the second moment and can improve long-run stability versus Adam.
+
+### FedAdagrad
+
+Apply server-side Adagrad updates to the aggregated client updates (see [FedAdagrad](FedAdagrad.md)). FedAdagrad scales steps by accumulated squared aggregates and helps when parameters require different effective learning rates.
+
+### Security and Attacks
+
+See the security overview for federated learning in [Attacks](Attacks/README.md) — taxonomy, examples, and mitigations for poisoning, inference, Byzantine, Sybil, communication, and infrastructure attacks.
+
+## Comparison of Methods
+
+The table below summarizes the key idea, recommended use-case, and trade-offs for the algorithms covered in this folder.
+
+| Method | Main idea | When to use | Pros | Cons |
+| --- | --- | --- | --- | --- |
+| FedAvg | Local SGD + weighted averaging | Default baseline | Simple, communication-efficient | Sensitive to heterogeneity |
+| FedAvgM | Server-side momentum on aggregated updates | Noisy/oscillatory FedAvg training | Smooths updates, faster convergence | May accumulate bias under skewed sampling |
+| FedAdam | Server-side Adam on aggregated updates | Per-parameter scale differences | Adaptive coordinate-wise scaling, easier tuning | Requires optimizer state; can mask biased aggregates |
+| FedYogi | Server-side Yogi (modified second moment) | When Adam's second moment grows too quickly | More stable long-run adaptation | More complex update rule |
+| FedAdagrad | Server-side Adagrad (accumulator) | Parameters with different effective LRs | Simple adaptivity | Accumulator can shrink steps over long runs |
+| FedProx | Proximal term in client objective | Strong client heterogeneity | Reduces client drift | Extra hyperparameter; may limit local progress |
+| SCAFFOLD | Client/server control variates (correction) | Severe heterogeneity and client-state available | Reduces drift and variance | Requires client state and extra metadata |
+
+
 
 ## Evaluation Checklist
 
